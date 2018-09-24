@@ -18,7 +18,7 @@
 #include "Crypto/Camellia.h"
 #include "Crypto/GostCipher.h"
 #include "Crypto/kuznyechik.h"
-#include "Common/SGX_Utils.c"
+#include "Crypto/SGX.c"
 
 #ifdef TC_AES_HW_CPU
 #	include "Crypto/Aes_hw_cpu.h"
@@ -511,6 +511,55 @@ namespace VeraCrypt
 #else
 		return false;
 #endif
+	}
+
+	//SGX
+	void CipherSGX::Decrypt (byte *data) const
+	{
+		if(IsHwSupportAvailable())
+			sgx_unseal_data (data, data, (aes_decrypt_ctx *) (ScheduledKey.Ptr() + sizeof (aes_encrypt_ctx)));
+	}
+
+	void CipherSGX::DecryptBlocks (byte *data, size_t blockCount) const
+	{
+		if (!Initialized)
+			throw NotInitialized (SRC_POS);
+
+		Cipher::DecryptBlocks (data, blockCount);
+	}
+
+	void CipherSGX::Encrypt (byte *data) const
+	{
+		if(IsHwSupportAvailable())
+			sgx_seal_data (data, data, (aes_encrypt_ctx *) ScheduledKey.Ptr());
+	}
+
+	void CipherSGX::EncryptBlocks (byte *data, size_t blockCount) const
+	{
+		if (!Initialized)
+			throw NotInitialized (SRC_POS);
+
+		while (blockCount > 0)
+		{
+			byte* temp = (byte*) malloc(32 * GetBlockSize());
+			memcpy()
+			data += 32 * GetBlockSize();
+		}
+	}
+
+	size_t CipherSGX::GetScheduledKeySize () const
+	{
+		return 128;// a principio não vai usar pra nada
+	}
+
+	bool CipherSGX::IsHwSupportAvailable () const
+	{
+		return SgxIsEnabled() = 1;
+	}
+
+	void CipherSGX::SetCipherKey (const byte *key)
+	{
+
 	}
 	bool Cipher::HwSupportEnabled = true;
 }

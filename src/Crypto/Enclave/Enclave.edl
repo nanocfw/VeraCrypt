@@ -1,0 +1,11 @@
+enclave {
+    trusted {
+        public void ecall_get_sealed_data_size(uint32_t data_size, [out] uint32_t *sealed_data_size);
+            
+        public void ecall_seal_data([in, size=data_size] uint8_t *data, uint32_t data_size, [out, size=sealed_data_size] uint8_t *sealed_data, uint32_t sealed_data_size);
+            
+        public void ecall_get_unsealed_data_size([in, size=sealed_data_size] uint8_t *sealed_data, uint32_t sealed_data_size, [out] uint32_t *unsealed_data_size);
+            
+        public void ecall_unseal_data([in, size=sealed_data_size] uint8_t *sealed_data, uint32_t sealed_data_size, [out, size=unsealed_data_size] uint8_t *unsealed_data, uint32_t unsealed_data_size);
+    };
+};
