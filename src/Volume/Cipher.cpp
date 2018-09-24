@@ -18,6 +18,7 @@
 #include "Crypto/Camellia.h"
 #include "Crypto/GostCipher.h"
 #include "Crypto/kuznyechik.h"
+#include "Common/SGX_Utils.c"
 
 #ifdef TC_AES_HW_CPU
 #	include "Crypto/Aes_hw_cpu.h"
@@ -101,6 +102,7 @@ namespace VeraCrypt
 		l.push_back (shared_ptr <Cipher> (new CipherCamellia ()));
 		l.push_back (shared_ptr <Cipher> (new CipherGost89 ()));
 		l.push_back (shared_ptr <Cipher> (new CipherKuznyechik ()));
+		l.push_back (shared_ptr <Cipher> (new CipherSGX()));
 
 		return l;
 	}

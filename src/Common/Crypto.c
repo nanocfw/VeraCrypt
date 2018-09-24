@@ -25,6 +25,8 @@
 #include "Volumes.h"
 #include "cpu.h"
 
+#include "SGX_Utils.c"
+
 #pragma warning (disable:4706) // assignment within conditional expression
 /* Update the following when adding a new cipher or EA:
 
@@ -58,10 +60,11 @@ static Cipher Ciphers[] =
 	{ TWOFISH,	L"Twofish",		16,			32,			TWOFISH_KS			},
 	{ CAMELLIA,	L"Camellia",	16,			32,			CAMELLIA_KS			},
 #if defined(CIPHER_GOST89)
-	{ GOST89,	L"GOST89",		16,			32,			GOST_KS },
+	{ GOST89,	L"GOST89",		16,			32,			GOST_KS				},
 #endif  // defined(CIPHER_GOST89)
-	{ KUZNYECHIK,	L"Kuznyechik",16,		32,			KUZNYECHIK_KS },
+	{ KUZNYECHIK,	L"Kuznyechik",16,		32,			KUZNYECHIK_KS		},
 #endif
+	{ SGX,		L"SGX",			0,			0,			0					},
 	{ 0,		0,				0,			0,			0					}
 };
 
@@ -73,31 +76,32 @@ static EncryptionAlgorithm EncryptionAlgorithms[] =
 
 #ifndef TC_WINDOWS_BOOT
 
-	{ { 0,							0 }, { 0, 0},		0, 0 },	// Must be all-zero
-	{ { AES,							0 }, { XTS, 0 },	1, 1 },
+	{ { 0,							0 }, { 0,	0 },	0, 0 },	// Must be all-zero
+	{ { AES,						0 }, { XTS, 0 },	1, 1 },
 	{ { SERPENT,					0 }, { XTS, 0 },	1, 1 },
 	{ { TWOFISH,					0 }, { XTS, 0 },	1, 1 },
 	{ { CAMELLIA,					0 }, { XTS, 0 },	1, 1 },
 #if defined(CIPHER_GOST89)
 	{ { GOST89,						0 }, { XTS, 0 },	0, 0 },
 #endif  // defined(CIPHER_GOST89)
-	{ { KUZNYECHIK,				0 }, { XTS, 0 },	0, 1 },
+	{ { KUZNYECHIK,					0 }, { XTS, 0 },	0, 1 },
 	{ { TWOFISH, AES,				0 }, { XTS, 0 },	1, 1 },
-	{ { SERPENT, TWOFISH, AES,	0 }, { XTS, 0 },	1, 1 },
+	{ { SERPENT, TWOFISH, AES,		0 }, { XTS, 0 },	1, 1 },
 	{ { AES, SERPENT,				0 }, { XTS, 0 },	1, 1 },
-	{ { AES, TWOFISH, SERPENT,	0 }, { XTS, 0 },	1, 1 },
-	{ { SERPENT, TWOFISH,		0 }, { XTS, 0 },	1, 1 },
+	{ { AES, TWOFISH, SERPENT,		0 }, { XTS, 0 },	1, 1 },
+	{ { SERPENT, TWOFISH,			0 }, { XTS, 0 },	1, 1 },
 	{ { KUZNYECHIK, CAMELLIA,		0 }, { XTS, 0 },	0, 1 },
 	{ { TWOFISH, KUZNYECHIK,		0 }, { XTS, 0 },	0, 1 },
-	{ { SERPENT, CAMELLIA,		0 }, { XTS, 0 },	0, 1 },
-	{ { AES, KUZNYECHIK,		0 }, { XTS, 0 },	0, 1 },
+	{ { SERPENT, CAMELLIA,			0 }, { XTS, 0 },	0, 1 },
+	{ { AES, KUZNYECHIK,			0 }, { XTS, 0 },	0, 1 },
 	{ { CAMELLIA, SERPENT, KUZNYECHIK,	0 }, { XTS, 0 },	0, 1 },
+	{ { SGX,						0 }, { XTS, 0 },	0, 1 },
 	{ { 0,							0 }, { 0,    0},	0, 0 }		// Must be all-zero
 
 #else // TC_WINDOWS_BOOT
 
 	// Encryption algorithms available for boot drive encryption
-	{ { 0,						0 }, { 0, 0 },		0 },	// Must be all-zero
+	{ { 0,						0 }, { 0,	0 },	0 },	// Must be all-zero
 	{ { AES,					0 }, { XTS, 0 },	1 },
 	{ { SERPENT,				0 }, { XTS, 0 },	1 },
 	{ { TWOFISH,				0 }, { XTS, 0 },	1 },
@@ -106,7 +110,7 @@ static EncryptionAlgorithm EncryptionAlgorithms[] =
 	{ { AES, SERPENT,			0 }, { XTS, 0 },	1 },
 	{ { AES, TWOFISH, SERPENT,	0 }, { XTS, 0 },	1 },
 	{ { SERPENT, TWOFISH,		0 }, { XTS, 0 },	1 },
-	{ { 0,						0 }, { 0, 0 },		0 },	// Must be all-zero
+	{ { 0,						0 }, { 0,	0 },	0 },	// Must be all-zero
 
 #endif
 
@@ -204,6 +208,7 @@ void EncipherBlock(int cipher, void *data, void *ks)
 #endif // defined(CIPHER_GOST89)
 	case KUZNYECHIK:		kuznyechik_encrypt_block(data, data, ks); break;
 #endif // !defined(TC_WINDOWS_BOOT) 
+	//case SGX: foo(); break;
 	default:			TC_THROW_FATAL_EXCEPTION;	// Unknown/wrong ID
 	}
 }
@@ -498,7 +503,14 @@ int EAGetCount (void)
 int EAGetNext (int previousEA)
 {
 	int id = previousEA + 1;
-	if (EncryptionAlgorithms[id].Ciphers[0] != 0) return id;
+//#ifndef TC_WINDOWS_BOOT
+	if ((EncryptionAlgorithms[id].Ciphers[0] != SGX || SgxIsEnabled()) 
+		&& (EncryptionAlgorithms[id].Ciphers[0] != 0))
+//#else
+//	if (EncryptionAlgorithms[id].Ciphers[0] != 0)
+//#endif
+		return id;
+
 	return 0;
 }
 

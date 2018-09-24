@@ -93,6 +93,7 @@ namespace VeraCrypt
 	TC_ENCRYPTION_ALGORITHM (KuznyechikSerpentCamellia);
 	TC_ENCRYPTION_ALGORITHM (CamelliaKuznyechik);
 	TC_ENCRYPTION_ALGORITHM (CamelliaSerpent);
+	TC_ENCRYPTION_ALGORITHM (SGX);
 
 #undef TC_ENCRYPTION_ALGORITHM
 }

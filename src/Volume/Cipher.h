@@ -105,6 +105,7 @@ namespace VeraCrypt
 	TC_CIPHER (Twofish, 16, 32);
 	TC_CIPHER (Camellia, 16, 32);
 	TC_CIPHER (Kuznyechik, 16, 32);
+	TC_CIPHER (SGX, 16, 32);
 
 #undef TC_CIPHER_ADD_METHODS
 #define TC_CIPHER_ADD_METHODS

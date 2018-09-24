@@ -113,7 +113,8 @@ enum
 	TWOFISH,
 	CAMELLIA,
 	GOST89,
-	KUZNYECHIK
+	KUZNYECHIK,
+	SGX
 };
 
 typedef struct
