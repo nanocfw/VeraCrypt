@@ -80,6 +80,8 @@ OBJS += ../Crypto/GostCipher.o
 OBJS += ../Crypto/Streebog.o
 OBJS += ../Crypto/kuznyechik.o
 OBJS += ../Crypto/kuznyechik_simd.o
+OBJS += ../Crypto/Enclave_u.o
+OBJS += ../Crypto/SGX.o
 
 OBJS += ../Common/Crc.o
 OBJS += ../Common/Endian.o

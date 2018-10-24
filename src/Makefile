@@ -42,11 +42,20 @@ export CXX ?= g++
 export AS := yasm
 export RANLIB ?= ranlib
 
-export CFLAGS := -Wall
-export CXXFLAGS := -Wall -Wno-unused-parameter
+export SGX_SDK ?= /home/marciano/linux-sgx/linux/installer/bin/sgxsdk
+export SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
+export SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
+export SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
+
+Enclave_Name := Main/enclave.so
+Signed_Enclave_Name := Main/enclave.signed.so
+Enclave_Config_File := Crypto/Enclave/Enclave.config.xml
+
+export CFLAGS := -Wall -I$(SGX_SDK)/include
+export CXXFLAGS := -Wall -Wno-unused-parameter -I$(SGX_SDK)/include
 C_CXX_FLAGS := -MMD -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES -I$(BASE_DIR) -I$(BASE_DIR)/Crypto
 export ASFLAGS := -D __GNUC__ -D __YASM__
-export LFLAGS :=
+export LFLAGS := -L$(SGX_LIBRARY_PATH) -lsgx_urts_sim -lpthread -lsgx_uae_service_sim
 
 export PKG_CONFIG_PATH ?= /usr/local/lib/pkgconfig
 

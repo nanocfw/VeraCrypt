@@ -147,7 +147,7 @@ namespace VeraCrypt
 
 		case Step::EncryptionOptions:
 			{
-				EncryptionOptionsWizardPage *page = new EncryptionOptionsWizardPage (GetPageParent());
+				EncryptionOptionsWizardPage *page = new EncryptionOptionsWizardPage (GetPageParent()); // @suppress("Abstract class cannot be instantiated")
 
 				if (OuterVolume)
 					page->SetPageTitle (LangString["CIPHER_HIDVOL_HOST_TITLE"]);
@@ -206,7 +206,7 @@ namespace VeraCrypt
 
 		case Step::VolumePassword:
 			{
-				VolumePasswordWizardPage *page = new VolumePasswordWizardPage (GetPageParent(), Password, Keyfiles);
+				VolumePasswordWizardPage *page = new VolumePasswordWizardPage (GetPageParent(), Password, Keyfiles); // @suppress("Abstract class cannot be instantiated")
 				page->EnableUsePim (); // force displaying "Use PIM"
 				page->SetPimSelected (Pim > 0);
 
@@ -217,7 +217,7 @@ namespace VeraCrypt
 				else
 					page->SetPageTitle (LangString["PASSWORD_TITLE"]);
 
-				page->SetPageText (LangString[OuterVolume ? "PASSWORD_HIDDENVOL_HOST_HELP" : "PASSWORD_HELP"]);
+				page->SetPageText (LangString[OuterVolume ? "PASSWORD_HIDDENVOL_HOST_HELP" : "PASSWORD_HELP"]); // @suppress("Invalid arguments")
 				return page;
 			}
 
@@ -295,7 +295,7 @@ namespace VeraCrypt
 
 				page->SetPageText (LangString["FORMAT_HELP"]);
 				page->AbortEvent.Connect (EventConnector <VolumeCreationWizard> (this, &VolumeCreationWizard::OnAbortButtonClick));
-				page->SetNextButtonText (LangString["FORMAT"]);
+				page->SetNextButtonText (LangString["FORMAT"]); // @suppress("Invalid arguments")
 				return page;
 			}
 

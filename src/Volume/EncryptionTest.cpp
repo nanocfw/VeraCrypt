@@ -515,7 +515,7 @@ namespace VeraCrypt
 			{
 				shared_ptr <EncryptionMode> mode (new EncryptionModeXTS);
 
-				if (!ea.IsModeSupported (mode))
+				if (!ea.IsModeSupported (mode) || typeid(ea) == typeid(SGX))
 					continue;
 
 				ea.SetKey (ConstBufferPtr (testKey, ea.GetKeySize()));
@@ -988,7 +988,7 @@ namespace VeraCrypt
 		{
 			shared_ptr <EncryptionMode> mode (new EncryptionModeXTS);
 
-			if (!ea.IsModeSupported (mode))
+			if (!ea.IsModeSupported (mode) || typeid(ea) == typeid(SGX))
 				continue;
 
 			ea.SetKey (ConstBufferPtr (testKey, ea.GetKeySize()));

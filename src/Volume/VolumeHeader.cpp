@@ -17,6 +17,9 @@
 #include "VolumeHeader.h"
 #include "VolumeException.h"
 #include "Common/Crypto.h"
+#include "Crypto/SGX.h"
+#include "sgx_eid.h"
+#include "string.h"
 
 namespace VeraCrypt
 {
@@ -280,6 +283,23 @@ namespace VeraCrypt
 
 		BufferPtr headerData = newHeaderBuffer.GetRange (EncryptedHeaderDataOffset, EncryptedHeaderDataSize);
 		Serialize (headerData);
+
+		if (wcscmp(ea->GetName().c_str(), L"SGX")==0)
+		{
+			sgx_enclave_id_t id;
+			if(init_enclave(&id) != SGX_SUCCESS)
+				return;
+
+			uint32_t t;
+
+			headerData.Set(sgx_seal_data(id, headerData.Get(), headerData.Size(), &t), t); // @suppress("Invalid arguments")
+
+			uint8_t *data = (uint8_t*)"Hello World!!!";
+			data = sgx_seal_data(id, data, 14, &t);// @suppress("Invalid arguments")
+			data = sgx_unseal_data(id, data, t);// @suppress("Invalid arguments")
+			t=0;
+		}
+		else
 		ea->Encrypt (headerData);
 
 		if (newPkcs5Kdf)
