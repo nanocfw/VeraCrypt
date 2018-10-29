@@ -98,7 +98,7 @@ namespace VeraCrypt
 #define TC_CIPHER_ADD_METHODS \
 	virtual void DecryptBlocks (byte *data, size_t blockCount) const; \
 	virtual void EncryptBlocks (byte *data, size_t blockCount) const; \
-	virtual bool IsHwSupportAvailable () const;
+	virtual bool IsHwSupportAvailable () const; \
 
 	TC_CIPHER (AES, 16, 32);
 	TC_CIPHER (Serpent, 16, 32);

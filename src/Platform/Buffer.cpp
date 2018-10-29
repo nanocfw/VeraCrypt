@@ -156,4 +156,37 @@ namespace VeraCrypt
 
 		return ConstBufferPtr (DataPtr + offset, size);
 	}
+
+	void BufferPtr::Allocate (size_t size)
+	{
+		if (size < 1)
+			throw ParameterIncorrect (SRC_POS);
+
+		if (DataPtr != nullptr)
+		{
+			if (DataSize == size)
+				return;
+			Free();
+		}
+
+		try
+		{
+			DataPtr = static_cast<byte *> (Memory::Allocate (size));
+			DataSize = size;
+		}
+		catch (...)
+		{
+			DataPtr = nullptr;
+			DataSize = 0;
+			throw;
+		}
+	}
+
+	void BufferPtr::Free ()
+	{
+		if (DataPtr != nullptr)
+				Memory::Free (DataPtr);
+		DataPtr = nullptr;
+		DataSize = 0;
+	}
 }

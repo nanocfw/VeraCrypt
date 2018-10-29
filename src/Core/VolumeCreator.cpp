@@ -86,11 +86,15 @@ namespace VeraCrypt
 					{
 						if (OutputBufferWritePos > 0)
 						{
-							Creator->Options->EA->EncryptSectors (OutputBuffer.GetRange (0, OutputBufferWritePos),
-								Creator->WriteOffset / ENCRYPTION_DATA_UNIT_SIZE, OutputBufferWritePos / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE);
+							uint64 enc_length;
+							byte *enc_data;
+							enc_data = Creator->Options->EA->EncryptSectors (OutputBuffer.GetRange (0, OutputBufferWritePos),
+								Creator->WriteOffset / ENCRYPTION_DATA_UNIT_SIZE, OutputBufferWritePos / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE, &enc_length);
 
-							Creator->VolumeFile->Write (OutputBuffer.GetRange (0, OutputBufferWritePos));
-
+							BufferPtr tmp(enc_data, enc_length);
+							Creator->VolumeFile->Write (tmp);
+							//tmp.Free();
+							OutputBufferWritePos = enc_length;
 							Creator->WriteOffset += OutputBufferWritePos;
 							Creator->SizeDone.Set (Creator->WriteOffset - Creator->DataStart);
 
@@ -113,7 +117,8 @@ namespace VeraCrypt
 				// Empty sectors are encrypted with different key to randomize plaintext
 				Core->RandomizeEncryptionAlgorithmKey (Options->EA);
 
-				SecureBuffer outputBuffer (File::GetOptimalWriteSize());
+				BufferPtr outputBuffer (nullptr, 0);
+				outputBuffer.Allocate(File::GetOptimalWriteSize());
 				uint64 dataFragmentLength = outputBuffer.Size();
 
 				while (!AbortRequested && WriteOffset < endOffset)
@@ -122,8 +127,18 @@ namespace VeraCrypt
 						dataFragmentLength = endOffset - WriteOffset;
 
 					outputBuffer.Zero();
-					Options->EA->EncryptSectors (outputBuffer, WriteOffset / ENCRYPTION_DATA_UNIT_SIZE, dataFragmentLength / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE);
-					VolumeFile->Write (outputBuffer, (size_t) dataFragmentLength);
+					byte *enc_data;
+
+					enc_data = Options->EA->EncryptSectors (
+							outputBuffer,
+							WriteOffset / ENCRYPTION_DATA_UNIT_SIZE,
+							dataFragmentLength / ENCRYPTION_DATA_UNIT_SIZE,
+							ENCRYPTION_DATA_UNIT_SIZE,
+							&dataFragmentLength);
+
+					BufferPtr tmp(enc_data, dataFragmentLength);
+					VolumeFile->Write (tmp, dataFragmentLength);
+//					tmp.Free();
 
 					WriteOffset += dataFragmentLength;
 					SizeDone.Set (WriteOffset - DataStart);
@@ -142,7 +157,7 @@ namespace VeraCrypt
 
 				Options->VolumeHeaderKdf->DeriveKey (HeaderKey, *PasswordKey, Options->Pim, backupHeaderSalt);
 
-				Layout->GetHeader()->EncryptNew (backupHeader, backupHeaderSalt, HeaderKey, Options->VolumeHeaderKdf);
+				Layout->GetHeader()->EncryptNew ((BufferPtr*) &backupHeader, backupHeaderSalt, HeaderKey, Options->VolumeHeaderKdf);
 
 				if (Options->Quick || Options->Type == VolumeType::Hidden)
 					VolumeFile->SeekEnd (Layout->GetBackupHeaderOffset());
@@ -181,9 +196,19 @@ namespace VeraCrypt
 					RandomNumberGenerator::GetData (hiddenHeaderKey);
 					headerOptions.HeaderKey = hiddenHeaderKey;
 
-					hiddenHeader->Create (backupHeader, headerOptions);
+					uint64 oldSize = Layout->GetHeader()->GetSize();
+					if(Options->EA->IsSGX())
+					{
+						hiddenHeader->SetSize(backupHeader.Size());
+						Layout->GetHeader()->SetSize(backupHeader.Size());
+					}
+
+					hiddenHeader->Create ((BufferPtr*) &backupHeader, headerOptions);
 
 					VolumeFile->Write (backupHeader);
+
+					if(Options->EA->IsSGX())
+						Layout->GetHeader()->SetSize(oldSize);
 				}
 
 				VolumeFile->Flush();
@@ -311,7 +336,7 @@ namespace VeraCrypt
 			options->VolumeHeaderKdf->DeriveKey (HeaderKey, *PasswordKey, options->Pim, salt);
 			headerOptions.HeaderKey = HeaderKey;
 
-			header->Create (headerBuffer, headerOptions);
+			header->Create ((BufferPtr*) &headerBuffer, headerOptions);
 
 			// Write new header
 			if (Layout->GetHeaderOffset() >= 0)
@@ -348,9 +373,19 @@ namespace VeraCrypt
 				RandomNumberGenerator::GetData (hiddenHeaderKey);
 				headerOptions.HeaderKey = hiddenHeaderKey;
 
-				hiddenHeader->Create (headerBuffer, headerOptions);
+				uint64 oldSize = header->GetSize();
+				if(options->EA->IsSGX())
+				{
+					hiddenHeader->SetSize(headerBuffer.Size());
+					header->SetSize(headerBuffer.Size());
+				}
+
+				hiddenHeader->Create ((BufferPtr*) &headerBuffer, headerOptions);
 
 				VolumeFile->Write (headerBuffer);
+
+				if(options->EA->IsSGX())
+					header->SetSize(oldSize);
 			}
 
 			// Data area keys

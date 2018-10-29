@@ -202,7 +202,7 @@ namespace VeraCrypt
 				EncryptionAlgorithmList encryptionAlgorithms = EncryptionAlgorithm::GetAvailableAlgorithms();
 				foreach (shared_ptr <EncryptionAlgorithm> ea, encryptionAlgorithms)
 				{
-					if (!ea->IsDeprecated())
+					if (!ea->IsDeprecated() && !ea->IsSGX())
 					{
 						BenchmarkResult result;
 						result.AlgorithmName = ea->GetName(true);
@@ -216,10 +216,11 @@ namespace VeraCrypt
 
 						wxLongLong startTime = wxGetLocalTimeMillis();
 
+						uint64 l;
 						// CPU "warm up" (an attempt to prevent skewed results on systems where CPU frequency gradually changes depending on CPU load).
 						do
 						{
-							ea->EncryptSectors (buffer, 0, buffer.Size() / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE);
+							ea->EncryptSectors (buffer, 0, buffer.Size() / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE, &l);
 						}
 						while (wxGetLocalTimeMillis().GetValue() - startTime.GetValue() < 20);
 
@@ -229,7 +230,7 @@ namespace VeraCrypt
 
 						do
 						{
-							ea->EncryptSectors (buffer, 0, buffer.Size() / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE);
+							ea->EncryptSectors (buffer, 0, buffer.Size() / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE, &l);
 							size += buffer.Size();
 							time = (uint64) (wxGetLocalTimeMillis().GetValue() - startTime.GetValue());
 						}
@@ -242,7 +243,7 @@ namespace VeraCrypt
 
 						do
 						{
-							ea->DecryptSectors (buffer, 0, buffer.Size() / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE);
+							ea->DecryptSectors (buffer, 0, buffer.Size() / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE, &l);
 							size += buffer.Size();
 							time = (uint64) (wxGetLocalTimeMillis().GetValue() - startTime.GetValue());
 						}

@@ -315,7 +315,7 @@ namespace VeraCrypt
 
 			// Re-encrypt volume header
 			SecureBuffer newHeaderBuffer (normalVolume->GetLayout()->GetHeaderSize());
-			ReEncryptHeaderThreadRoutine routine(newHeaderBuffer, normalVolume->GetHeader(), normalVolumeMountOptions.Password, normalVolumeMountOptions.Pim, normalVolumeMountOptions.Keyfiles);
+			ReEncryptHeaderThreadRoutine routine((BufferPtr*) &newHeaderBuffer, normalVolume->GetHeader(), normalVolumeMountOptions.Password, normalVolumeMountOptions.Pim, normalVolumeMountOptions.Keyfiles);
 
 			ExecuteWaitThreadRoutine (parent, &routine);
 
@@ -324,7 +324,7 @@ namespace VeraCrypt
 			if (hiddenVolume)
 			{
 				// Re-encrypt hidden volume header
-				ReEncryptHeaderThreadRoutine hiddenRoutine(newHeaderBuffer, hiddenVolume->GetHeader(), hiddenVolumeMountOptions.Password, hiddenVolumeMountOptions.Pim, hiddenVolumeMountOptions.Keyfiles);
+				ReEncryptHeaderThreadRoutine hiddenRoutine((BufferPtr*) &newHeaderBuffer, hiddenVolume->GetHeader(), hiddenVolumeMountOptions.Password, hiddenVolumeMountOptions.Pim, hiddenVolumeMountOptions.Keyfiles);
 
 				ExecuteWaitThreadRoutine (parent, &hiddenRoutine);
 			}
@@ -333,7 +333,7 @@ namespace VeraCrypt
 				// Store random data in place of hidden volume header
 				shared_ptr <EncryptionAlgorithm> ea = normalVolume->GetEncryptionAlgorithm();
 				Core->RandomizeEncryptionAlgorithmKey (ea);
-				ea->Encrypt (newHeaderBuffer);
+				ea->Encrypt ((BufferPtr*) &newHeaderBuffer);
 			}
 
 			backupFile.Write (newHeaderBuffer);
@@ -1481,7 +1481,7 @@ namespace VeraCrypt
 			// Re-encrypt volume header
 			wxBusyCursor busy;
 			SecureBuffer newHeaderBuffer (volume->GetLayout()->GetHeaderSize());
-			ReEncryptHeaderThreadRoutine routine(newHeaderBuffer, volume->GetHeader(), options.Password, options.Pim, options.Keyfiles);
+			ReEncryptHeaderThreadRoutine routine((BufferPtr*) &newHeaderBuffer, volume->GetHeader(), options.Password, options.Pim, options.Keyfiles);
 
 			ExecuteWaitThreadRoutine (parent, &routine);
 
@@ -1596,7 +1596,7 @@ namespace VeraCrypt
 			// Re-encrypt volume header
 			wxBusyCursor busy;
 			SecureBuffer newHeaderBuffer (decryptedLayout->GetHeaderSize());
-			ReEncryptHeaderThreadRoutine routine(newHeaderBuffer, decryptedLayout->GetHeader(), options.Password, options.Pim, options.Keyfiles);
+			ReEncryptHeaderThreadRoutine routine((BufferPtr*) &newHeaderBuffer, decryptedLayout->GetHeader(), options.Password, options.Pim, options.Keyfiles);
 
 			ExecuteWaitThreadRoutine (parent, &routine);
 
@@ -1612,7 +1612,7 @@ namespace VeraCrypt
 			if (decryptedLayout->HasBackupHeader())
 			{
 				// Re-encrypt backup volume header
-				ReEncryptHeaderThreadRoutine backupRoutine(newHeaderBuffer, decryptedLayout->GetHeader(), options.Password, options.Pim, options.Keyfiles);
+				ReEncryptHeaderThreadRoutine backupRoutine((BufferPtr*) &newHeaderBuffer, decryptedLayout->GetHeader(), options.Password, options.Pim, options.Keyfiles);
 
 				ExecuteWaitThreadRoutine (parent, &backupRoutine);
 

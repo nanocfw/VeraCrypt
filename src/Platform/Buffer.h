@@ -62,6 +62,8 @@ namespace VeraCrypt
 
 		operator ConstBufferPtr () const { return ConstBufferPtr (DataPtr, DataSize); }
 
+		void Allocate (size_t size);
+		void Free ();
 	protected:
 		byte *DataPtr;
 		size_t DataSize;

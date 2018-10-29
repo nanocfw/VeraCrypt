@@ -71,7 +71,7 @@ namespace VeraCrypt
 		virtual shared_ptr <VolumeInfo> MountVolume (MountOptions &options) = 0;
 		virtual shared_ptr <Volume> OpenVolume (shared_ptr <VolumePath> volumePath, bool preserveTimestamps, shared_ptr <VolumePassword> password, int pim, shared_ptr<Pkcs5Kdf> Kdf, bool truecryptMode, shared_ptr <KeyfileList> keyfiles, VolumeProtection::Enum protection = VolumeProtection::None, shared_ptr <VolumePassword> protectionPassword = shared_ptr <VolumePassword> (), int protectionPim = 0, shared_ptr<Pkcs5Kdf> protectionKdf = shared_ptr<Pkcs5Kdf> (), shared_ptr <KeyfileList> protectionKeyfiles = shared_ptr <KeyfileList> (), bool sharedAccessAllowed = false, VolumeType::Enum volumeType = VolumeType::Unknown, bool useBackupHeaders = false, bool partitionInSystemEncryptionScope = false) const;
 		virtual void RandomizeEncryptionAlgorithmKey (shared_ptr <EncryptionAlgorithm> encryptionAlgorithm) const;
-		virtual void ReEncryptVolumeHeaderWithNewSalt (const BufferPtr &newHeaderBuffer, shared_ptr <VolumeHeader> header, shared_ptr <VolumePassword> password, int pim, shared_ptr <KeyfileList> keyfiles) const;
+		virtual void ReEncryptVolumeHeaderWithNewSalt (BufferPtr *newHeaderBuffer, shared_ptr <VolumeHeader> header, shared_ptr <VolumePassword> password, int pim, shared_ptr <KeyfileList> keyfiles) const;
 		virtual void SetAdminPasswordCallback (shared_ptr <GetStringFunctor> functor) { }
 		virtual void SetApplicationExecutablePath (const FilePath &path) { ApplicationExecutablePath = path; }
 		virtual void SetFileOwner (const FilesystemPath &path, const UserId &owner) const = 0;

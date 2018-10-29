@@ -217,7 +217,7 @@ namespace VeraCrypt
 				else
 					page->SetPageTitle (LangString["PASSWORD_TITLE"]);
 
-				page->SetPageText (LangString[OuterVolume ? "PASSWORD_HIDDENVOL_HOST_HELP" : "PASSWORD_HELP"]); // @suppress("Invalid arguments")
+				page->SetPageText (LangString[OuterVolume ? "PASSWORD_HIDDENVOL_HOST_HELP" : "PASSWORD_HELP"]);
 				return page;
 			}
 
@@ -295,7 +295,7 @@ namespace VeraCrypt
 
 				page->SetPageText (LangString["FORMAT_HELP"]);
 				page->AbortEvent.Connect (EventConnector <VolumeCreationWizard> (this, &VolumeCreationWizard::OnAbortButtonClick));
-				page->SetNextButtonText (LangString["FORMAT"]); // @suppress("Invalid arguments")
+				page->SetNextButtonText (LangString["FORMAT"]);
 				return page;
 			}
 

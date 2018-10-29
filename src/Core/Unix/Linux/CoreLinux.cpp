@@ -440,7 +440,7 @@ namespace VeraCrypt
 			nativeDev.ReadAt (lastSectorBuf, lastSectorOffset);
 
 			SecureBuffer lastSectorBuf2 (volume->GetSectorSize());
-			volume->ReadSectors (lastSectorBuf2, lastSectorOffset);
+			volume->ReadSectors ((BufferPtr*) &lastSectorBuf2, lastSectorOffset);
 
 			if (memcmp (lastSectorBuf.Ptr(), lastSectorBuf2.Ptr(), volume->GetSectorSize()) != 0)
 				throw KernelCryptoServiceTestFailed (SRC_POS);

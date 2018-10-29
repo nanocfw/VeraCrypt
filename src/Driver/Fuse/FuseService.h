@@ -54,7 +54,7 @@ namespace VeraCrypt
 		static uint64 GetVolumeSize ();
 		static uint64 GetVolumeSectorSize () { return MountedVolume->GetSectorSize(); }
 		static void Mount (shared_ptr <Volume> openVolume, VolumeSlotNumber slotNumber, const string &fuseMountPoint);
-		static void ReadVolumeSectors (const BufferPtr &buffer, uint64 byteOffset);
+		static void ReadVolumeSectors (BufferPtr *buffer, uint64 byteOffset);
 		static void ReceiveAuxDeviceInfo (const ConstBufferPtr &buffer);
 		static void SendAuxDeviceInfo (const DirectoryPath &fuseMountPoint, const DevicePath &virtualDevice, const DevicePath &loopDevice = DevicePath());
 		static void WriteVolumeSectors (const ConstBufferPtr &buffer, uint64 byteOffset);

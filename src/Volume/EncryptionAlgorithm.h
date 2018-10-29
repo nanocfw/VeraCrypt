@@ -27,12 +27,12 @@ namespace VeraCrypt
 	public:
 		virtual ~EncryptionAlgorithm ();
 
-		virtual void Decrypt (byte *data, uint64 length) const;
-		virtual void Decrypt (const BufferPtr &data) const;
-		virtual void DecryptSectors (byte *data, uint64 sectorIndex, uint64 sectorCount, size_t sectorSize) const;
-		virtual void Encrypt (byte *data, uint64 length) const;
-		virtual void Encrypt (const BufferPtr &data) const;
-		virtual void EncryptSectors (byte *data, uint64 sectorIndex, uint64 sectorCount, size_t sectorSize) const;
+		virtual byte *Decrypt (byte *data, uint64 length, uint64 *length_dec) const;
+		virtual void Decrypt (BufferPtr *data) const;
+		virtual byte *DecryptSectors (byte *data, uint64 sectorIndex, uint64 sectorCount, size_t sectorSize, uint64 *length_dec) const;
+		virtual byte *Encrypt (byte *data, uint64 length, uint64 *length_enc) const;
+		virtual void Encrypt (BufferPtr *data) const;
+		virtual byte *EncryptSectors (byte *data, uint64 sectorIndex, uint64 sectorCount, size_t sectorSize, uint64 *length_enc) const;
 		static EncryptionAlgorithmList GetAvailableAlgorithms ();
 		virtual const CipherList &GetCiphers () const { return Ciphers; }
 		virtual shared_ptr <EncryptionAlgorithm> GetNew () const = 0;
@@ -47,6 +47,7 @@ namespace VeraCrypt
 		virtual bool IsModeSupported (const shared_ptr <EncryptionMode> mode) const;
 		virtual void SetKey (const ConstBufferPtr &key);
 		virtual void SetMode (shared_ptr <EncryptionMode> mode);
+		bool IsSGX() {return FIsSGX; };
 
 	protected:
 		EncryptionAlgorithm ();
@@ -55,6 +56,7 @@ namespace VeraCrypt
 
 		CipherList Ciphers;
 		bool Deprecated;
+		bool FIsSGX;
 		shared_ptr <EncryptionMode> Mode;
 		EncryptionModeList SupportedModes;
 

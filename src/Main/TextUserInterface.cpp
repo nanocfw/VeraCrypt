@@ -400,21 +400,21 @@ namespace VeraCrypt
 
 		// Re-encrypt volume header
 		SecureBuffer newHeaderBuffer (normalVolume->GetLayout()->GetHeaderSize());
-		Core->ReEncryptVolumeHeaderWithNewSalt (newHeaderBuffer, normalVolume->GetHeader(), normalVolumeMountOptions.Password, normalVolumeMountOptions.Pim, normalVolumeMountOptions.Keyfiles);
+		Core->ReEncryptVolumeHeaderWithNewSalt ((BufferPtr*) &newHeaderBuffer, normalVolume->GetHeader(), normalVolumeMountOptions.Password, normalVolumeMountOptions.Pim, normalVolumeMountOptions.Keyfiles);
 
 		backupFile.Write (newHeaderBuffer);
 
 		if (hiddenVolume)
 		{
 			// Re-encrypt hidden volume header
-			Core->ReEncryptVolumeHeaderWithNewSalt (newHeaderBuffer, hiddenVolume->GetHeader(), hiddenVolumeMountOptions.Password, hiddenVolumeMountOptions.Pim, hiddenVolumeMountOptions.Keyfiles);
+			Core->ReEncryptVolumeHeaderWithNewSalt ((BufferPtr*) &newHeaderBuffer, hiddenVolume->GetHeader(), hiddenVolumeMountOptions.Password, hiddenVolumeMountOptions.Pim, hiddenVolumeMountOptions.Keyfiles);
 		}
 		else
 		{
 			// Store random data in place of hidden volume header
 			shared_ptr <EncryptionAlgorithm> ea = normalVolume->GetEncryptionAlgorithm();
 			Core->RandomizeEncryptionAlgorithmKey (ea);
-			ea->Encrypt (newHeaderBuffer);
+			ea->Encrypt ((BufferPtr*) &newHeaderBuffer);
 		}
 
 		backupFile.Write (newHeaderBuffer);
@@ -1470,7 +1470,7 @@ namespace VeraCrypt
 
 			// Re-encrypt volume header
 			SecureBuffer newHeaderBuffer (volume->GetLayout()->GetHeaderSize());
-			Core->ReEncryptVolumeHeaderWithNewSalt (newHeaderBuffer, volume->GetHeader(), options.Password, options.Pim,  options.Keyfiles);
+			Core->ReEncryptVolumeHeaderWithNewSalt ((BufferPtr*) &newHeaderBuffer, volume->GetHeader(), options.Password, options.Pim,  options.Keyfiles);
 
 			// Write volume header
 			int headerOffset = volume->GetLayout()->GetHeaderOffset();
@@ -1572,7 +1572,7 @@ namespace VeraCrypt
 
 			// Re-encrypt volume header
 			SecureBuffer newHeaderBuffer (decryptedLayout->GetHeaderSize());
-			Core->ReEncryptVolumeHeaderWithNewSalt (newHeaderBuffer, decryptedLayout->GetHeader(), options.Password, options.Pim, options.Keyfiles);
+			Core->ReEncryptVolumeHeaderWithNewSalt ((BufferPtr*) &newHeaderBuffer, decryptedLayout->GetHeader(), options.Password, options.Pim, options.Keyfiles);
 
 			// Write volume header
 			int headerOffset = decryptedLayout->GetHeaderOffset();
@@ -1586,7 +1586,7 @@ namespace VeraCrypt
 			if (decryptedLayout->HasBackupHeader())
 			{
 				// Re-encrypt backup volume header
-				Core->ReEncryptVolumeHeaderWithNewSalt (newHeaderBuffer, decryptedLayout->GetHeader(), options.Password, options.Pim, options.Keyfiles);
+				Core->ReEncryptVolumeHeaderWithNewSalt ((BufferPtr*) &newHeaderBuffer, decryptedLayout->GetHeader(), options.Password, options.Pim, options.Keyfiles);
 
 				// Write backup volume header
 				headerOffset = decryptedLayout->GetBackupHeaderOffset();

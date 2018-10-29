@@ -213,12 +213,17 @@ namespace VeraCrypt
 
 						SecureBuffer alignedBuffer (alignedSize);
 
-						FuseService::ReadVolumeSectors (alignedBuffer, alignedOffset);
+						FuseService::ReadVolumeSectors ((BufferPtr*) &alignedBuffer, alignedOffset);
 						BufferPtr ((byte *) buf, size).CopyFrom (alignedBuffer.GetRange (offset % sectorSize, size));
 					}
 					else
 					{
-						FuseService::ReadVolumeSectors (BufferPtr ((byte *) buf, size), offset);
+						BufferPtr tmp(nullptr, size);
+						tmp.Allocate(size);
+						FuseService::ReadVolumeSectors (&tmp, offset);
+
+						BufferPtr ((byte *) buf, size).CopyFrom (tmp.GetRange (0, tmp.Size()));
+						tmp.Free();
 					}
 				}
 				catch (MissingVolumeData)
@@ -460,7 +465,7 @@ namespace VeraCrypt
 		}
 	}
 
-	void FuseService::ReadVolumeSectors (const BufferPtr &buffer, uint64 byteOffset)
+	void FuseService::ReadVolumeSectors (BufferPtr *buffer, uint64 byteOffset)
 	{
 		if (!MountedVolume)
 			throw NotInitialized (SRC_POS);

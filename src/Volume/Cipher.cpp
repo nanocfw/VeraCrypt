@@ -12,13 +12,14 @@
 
 #include "Platform/Platform.h"
 #include "Cipher.h"
+
+#include "../Crypto/SGX.cpp"
 #include "Crypto/Aes.h"
 #include "Crypto/SerpentFast.h"
 #include "Crypto/Twofish.h"
 #include "Crypto/Camellia.h"
 #include "Crypto/GostCipher.h"
 #include "Crypto/kuznyechik.h"
-#include "Crypto/SGX.c"
 
 #ifdef TC_AES_HW_CPU
 #	include "Crypto/Aes_hw_cpu.h"
@@ -516,9 +517,7 @@ namespace VeraCrypt
 	//SGX
 	void CipherSGX::Decrypt (byte *data) const
 	{
-		throw TestFailed (SRC_POS);
-	//	if(IsHwSupportAvailable())
-		//	sgx_unseal_data (data, data, (aes_decrypt_ctx *) (ScheduledKey.Ptr() + sizeof (aes_encrypt_ctx)));
+		throw SGXError (SRC_POS);
 	}
 
 	void CipherSGX::DecryptBlocks (byte *data, size_t blockCount) const
@@ -531,9 +530,7 @@ namespace VeraCrypt
 
 	void CipherSGX::Encrypt (byte *data) const
 	{
-		throw TestFailed (SRC_POS);
-	//	if(IsHwSupportAvailable())
-	//		sgx_seal_data (data, data, (aes_encrypt_ctx *) ScheduledKey.Ptr());
+		throw SGXError (SRC_POS);
 	}
 
 	void CipherSGX::EncryptBlocks (byte *data, size_t blockCount) const
@@ -543,48 +540,8 @@ namespace VeraCrypt
 
 		if (!IsHwSupportAvailable())
 			return;
-		throw TestFailed (SRC_POS);
 
-		/*byte* enc_data = null;
-		uint32 data_size = 0;
-		uint32 enc_data_size = 0;
-		uint32 sealed_data_size = 0;
-
-		while (blockCount > 0)
-		{
-			if (blockCount > 31)
-			{
-				data_size = 32 * GetBlockSize();
-				blockCount -= 32;
-			} else
-			{
-				data_size = blockCount * GetBlockSize();
-				blockCount -= blockCount;
-			}
-
-			byte* temp = (byte*) malloc(data_size);
-			memcpy(temp, data, data_size);
-
-			sgx_seal_data (temp, temp, data_size, sealed_data_size);
-			if (enc_data == null)
-			{
-				enc_data = temp;
-				enc_data_size = sealed_data_size;
-			}
-			else
-			{
-				enc_data_size = enc_data_size + sealed_data_size;
-				enc_data = realloc(enc_data, enc_data_size);
-				memcpy(enc_data + (enc_data_size - sealed_data_size), temp, sealed_data_size);
-				free(temp);
-			}
-
-			data += data_size;
-		}
-
-		data = realoc(data, enc_data_size);
-		memcpy(data, enc_data, enc_data_size);
-		free(enc_data);*/
+		throw SGXError (SRC_POS);
 	}
 
 	size_t CipherSGX::GetScheduledKeySize () const
@@ -594,13 +551,12 @@ namespace VeraCrypt
 
 	bool CipherSGX::IsHwSupportAvailable () const
 	{
-		throw TestFailed (SRC_POS);
-	//	return SgxIsEnabled() = 1;
+		throw SGXError (SRC_POS);
 	}
 
 	void CipherSGX::SetCipherKey (const byte *key)
 	{
-		//throw TestFailed (SRC_POS);
 	}
+
 	bool Cipher::HwSupportEnabled = true;
 }

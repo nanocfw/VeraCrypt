@@ -59,9 +59,9 @@ namespace VeraCrypt
 		VolumeHeader (uint32 HeaderSize);
 		virtual ~VolumeHeader ();
 
-		void Create (const BufferPtr &headerBuffer, VolumeHeaderCreationOptions &options);
+		void Create (BufferPtr *headerBuffer, VolumeHeaderCreationOptions &options);
 		bool Decrypt (const ConstBufferPtr &encryptedData, const VolumePassword &password, int pim, shared_ptr <Pkcs5Kdf> kdf, bool truecryptMode, const Pkcs5KdfList &keyDerivationFunctions, const EncryptionAlgorithmList &encryptionAlgorithms, const EncryptionModeList &encryptionModes);
-		void EncryptNew (const BufferPtr &newHeaderBuffer, const ConstBufferPtr &newSalt, const ConstBufferPtr &newHeaderKey, shared_ptr <Pkcs5Kdf> newPkcs5Kdf);
+		void EncryptNew (BufferPtr *newHeaderBuffer, const ConstBufferPtr &newSalt, const ConstBufferPtr &newHeaderKey, shared_ptr <Pkcs5Kdf> newPkcs5Kdf);
 		uint64 GetEncryptedAreaStart () const { return EncryptedAreaStart; }
 		uint64 GetEncryptedAreaLength () const { return EncryptedAreaLength; }
 		shared_ptr <EncryptionAlgorithm> GetEncryptionAlgorithm () const { return EA; }
@@ -76,6 +76,7 @@ namespace VeraCrypt
 		uint64 GetVolumeDataSize () const { return VolumeDataSize; }
 		VolumeTime GetVolumeCreationTime () const { return VolumeCreationTime; }
 		void SetSize (uint32 headerSize);
+		uint32 GetSize () const { return HeaderSize; }
 
 	protected:
 		bool Deserialize (const ConstBufferPtr &header, shared_ptr <EncryptionAlgorithm> &ea, shared_ptr <EncryptionMode> &mode, bool truecryptMode);
@@ -85,7 +86,6 @@ namespace VeraCrypt
 		void Serialize (const BufferPtr &header) const;
 		template <typename T> void SerializeEntry (const T &entry, const BufferPtr &header, size_t &offset) const;
 
-		uint32 HeaderSize;
 
 		static const uint16 CurrentHeaderVersion = VOLUME_HEADER_VERSION;
 		static const uint16 CurrentRequiredMinProgramVersion = TC_VOLUME_MIN_REQUIRED_PROGRAM_VERSION;
@@ -118,6 +118,7 @@ namespace VeraCrypt
 		uint64 EncryptedAreaLength;
 		uint32 Flags;
 		uint32 SectorSize;
+		uint32 HeaderSize;
 
 		SecureBuffer DataAreaKey;
 

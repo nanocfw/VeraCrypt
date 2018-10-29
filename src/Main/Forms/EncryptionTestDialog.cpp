@@ -43,6 +43,8 @@ namespace VeraCrypt
 			bool xts = XtsModeCheckBox->IsChecked();
 
 			shared_ptr <EncryptionAlgorithm> ea = GetSelectedEncryptionAlgorithm();
+			if (ea->IsSGX())
+				throw SGXError(SRC_POS);
 
 			Buffer key;
 			GetTextCtrlData (KeyTextCtrl, key);
@@ -102,11 +104,11 @@ namespace VeraCrypt
 				BufferPtr block = sector.GetRange (blockNumber * ea->GetMaxBlockSize(), ea->GetMaxBlockSize());
 
 				block.CopyFrom (data);
-
+				uint64 l;
 				if (encrypt)
-					ea->EncryptSectors (sector, dataUnitNumber, 1, sector.Size());
+					ea->EncryptSectors (sector, dataUnitNumber, 1, sector.Size(), &l);
 				else
-					ea->DecryptSectors (sector, dataUnitNumber, 1, sector.Size());
+					ea->DecryptSectors (sector, dataUnitNumber, 1, sector.Size(), &l);
 
 				data.CopyFrom (block);
 			}

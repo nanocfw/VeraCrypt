@@ -51,8 +51,8 @@ Enclave_Name := Main/enclave.so
 Signed_Enclave_Name := Main/enclave.signed.so
 Enclave_Config_File := Crypto/Enclave/Enclave.config.xml
 
-export CFLAGS := -Wall -I$(SGX_SDK)/include
-export CXXFLAGS := -Wall -Wno-unused-parameter -I$(SGX_SDK)/include
+export CFLAGS := -w -I$(SGX_SDK)/include
+export CXXFLAGS := -w -Wno-unused-parameter -I$(SGX_SDK)/include
 C_CXX_FLAGS := -MMD -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES -I$(BASE_DIR) -I$(BASE_DIR)/Crypto
 export ASFLAGS := -D __GNUC__ -D __YASM__
 export LFLAGS := -L$(SGX_LIBRARY_PATH) -lsgx_urts_sim -lpthread -lsgx_uae_service_sim

@@ -49,12 +49,12 @@ namespace VeraCrypt
 		SectorSize = 0;
 	}
 
-	void VolumeHeader::Create (const BufferPtr &headerBuffer, VolumeHeaderCreationOptions &options)
+	void VolumeHeader::Create (BufferPtr *headerBuffer, VolumeHeaderCreationOptions &options)
 	{
 		if (options.DataKey.Size() != options.EA->GetKeySize() * 2 || options.Salt.Size() != GetSaltSize())
 			throw ParameterIncorrect (SRC_POS);
 
-		headerBuffer.Zero();
+		headerBuffer->Zero();
 
 		HeaderVersion = CurrentHeaderVersion;
 		RequiredMinProgramVersion = CurrentRequiredMinProgramVersion;
@@ -126,7 +126,7 @@ namespace VeraCrypt
 					ea->SetMode (mode);
 
 					header.CopyFrom (encryptedData.GetRange (EncryptedHeaderDataOffset, EncryptedHeaderDataSize));
-					ea->Decrypt (header);
+					ea->Decrypt ((BufferPtr*) &header);
 
 					if (Deserialize (header, ea, mode, truecryptMode))
 					{
@@ -258,9 +258,9 @@ namespace VeraCrypt
 		return Endian::Big (*reinterpret_cast<const T *> (header.Get() + offset));
 	}
 
-	void VolumeHeader::EncryptNew (const BufferPtr &newHeaderBuffer, const ConstBufferPtr &newSalt, const ConstBufferPtr &newHeaderKey, shared_ptr <Pkcs5Kdf> newPkcs5Kdf)
+	void VolumeHeader::EncryptNew (BufferPtr *newHeaderBuffer, const ConstBufferPtr &newSalt, const ConstBufferPtr &newHeaderKey, shared_ptr <Pkcs5Kdf> newPkcs5Kdf)
 	{
-		if (newHeaderBuffer.Size() != HeaderSize || newSalt.Size() != SaltSize)
+		if (newHeaderBuffer->Size() != HeaderSize || newSalt.Size() != SaltSize)
 			throw ParameterIncorrect (SRC_POS);
 
 		shared_ptr <EncryptionMode> mode = EA->GetMode()->GetNew();
@@ -279,28 +279,29 @@ namespace VeraCrypt
 
 		ea->SetMode (mode);
 
-		newHeaderBuffer.CopyFrom (newSalt);
+		newHeaderBuffer->CopyFrom (newSalt);
 
-		BufferPtr headerData = newHeaderBuffer.GetRange (EncryptedHeaderDataOffset, EncryptedHeaderDataSize);
+		BufferPtr headerData = newHeaderBuffer->GetRange (EncryptedHeaderDataOffset, EncryptedHeaderDataSize);
 		Serialize (headerData);
 
-		if (wcscmp(ea->GetName().c_str(), L"SGX")==0)
-		{
-			sgx_enclave_id_t id;
-			if(init_enclave(&id) != SGX_SUCCESS)
-				return;
+		ea->Encrypt(&headerData);
 
-			uint32_t t;
+		uint64 tmp_length = EncryptedHeaderDataOffset + headerData.Size() + (newHeaderBuffer->Size() - (EncryptedHeaderDataOffset + EncryptedHeaderDataSize));
+		byte *tmp_data = (byte*) malloc(tmp_length);
 
-			headerData.Set(sgx_seal_data(id, headerData.Get(), headerData.Size(), &t), t); // @suppress("Invalid arguments")
+		if (EncryptedHeaderDataOffset)
+			memcpy(tmp_data, newHeaderBuffer->GetRange(0, EncryptedHeaderDataOffset), EncryptedHeaderDataOffset);
 
-			uint8_t *data = (uint8_t*)"Hello World!!!";
-			data = sgx_seal_data(id, data, 14, &t);// @suppress("Invalid arguments")
-			data = sgx_unseal_data(id, data, t);// @suppress("Invalid arguments")
-			t=0;
-		}
-		else
-		ea->Encrypt (headerData);
+		memcpy(tmp_data + EncryptedHeaderDataOffset, headerData.Get(), headerData.Size());
+
+		if (newHeaderBuffer->Size() > EncryptedHeaderDataOffset + EncryptedHeaderDataSize)
+			memcpy(tmp_data + EncryptedHeaderDataOffset + headerData.Size(),
+					newHeaderBuffer->GetRange(EncryptedHeaderDataOffset + EncryptedHeaderDataSize, newHeaderBuffer->Size()),
+					newHeaderBuffer->Size() - (EncryptedHeaderDataOffset + EncryptedHeaderDataSize));
+
+		//headerData.Free();
+		newHeaderBuffer->Free();
+		newHeaderBuffer->Set(tmp_data, tmp_length);
 
 		if (newPkcs5Kdf)
 			Pkcs5 = newPkcs5Kdf;

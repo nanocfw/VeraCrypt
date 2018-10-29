@@ -4,3 +4,9 @@
 *.o
 
 *.d
+
+*.a
+
+*.gch
+
+src/Main/veracrypt

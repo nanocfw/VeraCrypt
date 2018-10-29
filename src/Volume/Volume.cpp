@@ -310,23 +310,23 @@ namespace VeraCrypt
 		}
 	}
 
-	void Volume::ReadSectors (const BufferPtr &buffer, uint64 byteOffset)
+	void Volume::ReadSectors (BufferPtr *buffer, uint64 byteOffset)
 	{
 		if_debug (ValidateState ());
 
-		uint64 length = buffer.Size();
+		uint64 length = buffer->Size();
 		uint64 hostOffset = VolumeDataOffset + byteOffset;
 		size_t bufferOffset = 0;
 
 		if (length % SectorSize != 0 || byteOffset % SectorSize != 0)
 			throw ParameterIncorrect (SRC_POS);
 
-		if (VolumeFile->ReadAt (buffer, hostOffset) != length)
+		if (VolumeFile->ReadAt (*buffer, hostOffset) != length)
 			throw MissingVolumeData (SRC_POS);
 
 		// first sector can be unencrypted in some cases (e.g. windows repair)
 		// detect this case by looking for NTFS header
-		if (SystemEncryption && (hostOffset == 0) && ((BE64 (*(uint64 *) buffer.Get ())) == 0xEB52904E54465320ULL))
+		if (SystemEncryption && (hostOffset == 0) && ((BE64 (*(uint64 *) buffer->Get ())) == 0xEB52904E54465320ULL))
 		{
 			bufferOffset = (size_t) SectorSize;
 			hostOffset += SectorSize;
@@ -335,6 +335,9 @@ namespace VeraCrypt
 
 		if (length)
 		{
+			uint64 dec_length;
+			byte *dec_data = nullptr;
+			uint64 tmp_length;
 			if (EncryptionNotCompleted)
 			{
 				// if encryption is not complete, we decrypt only the encrypted sectors
@@ -342,14 +345,60 @@ namespace VeraCrypt
 				{
 					uint64 encryptedLength = VC_MIN (length, (EncryptedDataSize - hostOffset));
 
-					EA->DecryptSectors (buffer.GetRange (bufferOffset, encryptedLength), hostOffset / SectorSize, encryptedLength / SectorSize, SectorSize);			
+					//descriptografa somente o intervalo de dados solicitado
+					dec_data = EA->DecryptSectors (
+							buffer->GetRange (bufferOffset, encryptedLength),
+							hostOffset / SectorSize,
+							encryptedLength / SectorSize,
+							SectorSize,
+							&dec_length);
+
+					tmp_length = dec_length + bufferOffset + (buffer->Size() - (encryptedLength + bufferOffset)); // tamanho total dos dados após descriptografar
+					byte *tmp_data = (byte*) malloc(tmp_length); // aloca novo espaço na memória referente aos novos dados
+
+					if (bufferOffset > 0) // se o offset > 0, tem que copiar esses dados anteriores para o novo conjunto de dados
+						memcpy(tmp_data, buffer->GetRange(0, bufferOffset), bufferOffset);
+
+					memcpy(tmp_data + bufferOffset, dec_data, dec_length); // copia os dados descriptografados para o novo conjunto
+
+					if (buffer->Size() > encryptedLength + bufferOffset) // se o conjunto descriptografado não ia até o final dos dados, deve copiar o que sobrou a direita para o novo conjunto
+						memcpy(tmp_data + bufferOffset + dec_length,
+								buffer->GetRange(encryptedLength + bufferOffset, buffer->Size()),
+								buffer->Size() - (encryptedLength + bufferOffset));
+
+					free(dec_data); // esses dados já estão dentro do novo conjunto
+					buffer->Erase(); // esses também
+					buffer->Set(tmp_data, tmp_length); // seta os novos dados no buffer
 				}
 			}
 			else
-				EA->DecryptSectors (buffer.GetRange (bufferOffset, length), hostOffset / SectorSize, length / SectorSize, SectorSize);
-		}
+			{
+				dec_data = EA->DecryptSectors (
+						buffer->GetRange (bufferOffset, length),
+						hostOffset / SectorSize,
+						length / SectorSize,
+						SectorSize,
+						&dec_length);
 
-		TotalDataRead += length;
+				tmp_length = dec_length + bufferOffset + (buffer->Size() - (length + bufferOffset)); // tamanho total dos dados após descriptografar
+				byte *tmp_data = (byte*) malloc(tmp_length); // aloca novo espaço na memória referente aos novos dados
+
+				if (bufferOffset > 0) // se o offset > 0, tem que copiar esses dados anteriores para o novo conjunto de dados
+					memcpy(tmp_data, buffer->GetRange(0, bufferOffset), bufferOffset);
+
+				memcpy(tmp_data + bufferOffset, dec_data, dec_length); // copia os dados descriptografados para o novo conjunto
+
+				if (buffer->Size() > length + bufferOffset) // se o conjunto descriptografado não ia até o final dos dados, deve copiar o que sobrou a direita para o novo conjunto
+					memcpy(tmp_data + bufferOffset + dec_length,
+							buffer->GetRange(length + bufferOffset, buffer->Size()),
+							buffer->Size() - (length + bufferOffset));
+
+				free(dec_data); // esses dados já estão dentro do novo conjunto
+				buffer->Free(); // esses também
+				buffer->Set(tmp_data, tmp_length); // seta os novos dados no buffer
+			}
+			TotalDataRead += (tmp_length - bufferOffset);
+		}
 	}
 
 	void Volume::ReEncryptHeader (bool backupHeader, const ConstBufferPtr &newSalt, const ConstBufferPtr &newHeaderKey, shared_ptr <Pkcs5Kdf> newPkcs5Kdf)
@@ -361,7 +410,7 @@ namespace VeraCrypt
 
 		SecureBuffer newHeaderBuffer (Layout->GetHeaderSize());
 
-		Header->EncryptNew (newHeaderBuffer, newSalt, newHeaderKey, newPkcs5Kdf);
+		Header->EncryptNew ((BufferPtr*) &newHeaderBuffer, newSalt, newHeaderKey, newPkcs5Kdf);
 
 		int headerOffset = backupHeader ? Layout->GetBackupHeaderOffset() : Layout->GetHeaderOffset();
 
@@ -400,15 +449,23 @@ namespace VeraCrypt
 		if (Protection == VolumeProtection::HiddenVolumeReadOnly)
 			CheckProtectedRange (hostOffset, length);
 
-		SecureBuffer encBuf (buffer.Size());
-		encBuf.CopyFrom (buffer);
+		BufferPtr encBuff(nullptr, buffer.Size());
+		encBuff.Allocate(buffer.Size());
+		encBuff.CopyFrom (buffer);
 
-		EA->EncryptSectors (encBuf, hostOffset / SectorSize, length / SectorSize, SectorSize);
-		VolumeFile->WriteAt (encBuf, hostOffset);
+		uint64 enc_length;
+		byte *enc_data = nullptr;
+		enc_data = EA->EncryptSectors (encBuff, hostOffset / SectorSize, length / SectorSize, SectorSize, &enc_length);
 
-		TotalDataWritten += length;
+		encBuff.Free();
+		encBuff.Set(enc_data, enc_length);
 
-		uint64 writeEndOffset = byteOffset + buffer.Size();
+		VolumeFile->WriteAt (encBuff, hostOffset);
+		encBuff.Free();
+
+		TotalDataWritten += enc_length;
+
+		uint64 writeEndOffset = byteOffset + enc_length;
 		if (writeEndOffset > TopWriteOffset)
 			TopWriteOffset = writeEndOffset;
 	}

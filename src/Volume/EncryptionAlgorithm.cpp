@@ -12,10 +12,11 @@
 
 #include "EncryptionAlgorithm.h"
 #include "EncryptionModeXTS.h"
+#include "Crypto/SGX.h"
 
 namespace VeraCrypt
 {
-	EncryptionAlgorithm::EncryptionAlgorithm () : Deprecated (false)
+	EncryptionAlgorithm::EncryptionAlgorithm () : Deprecated (false), FIsSGX (false)
 	{
 	}
 
@@ -23,38 +24,80 @@ namespace VeraCrypt
 	{
 	}
 
-	void EncryptionAlgorithm::Decrypt (byte *data, uint64 length) const
+	byte *EncryptionAlgorithm::Decrypt (byte *data, uint64 length, uint64 *length_dec) const
 	{
 		if_debug (ValidateState ());
-		Mode->Decrypt (data, length);
+		if (FIsSGX)
+			return sgx_unseal_data(-1, data, length, length_dec);
+		else
+		{
+			Mode->Decrypt (data, length);
+			*length_dec = length;
+			return data;
+		}
 	}
 
-	void EncryptionAlgorithm::Decrypt (const BufferPtr &data) const
+	void EncryptionAlgorithm::Decrypt (BufferPtr *data) const
 	{
-		Decrypt (data, data.Size());
+		uint64 l;
+		if (FIsSGX)
+		{
+			byte *dec_data = sgx_unseal_data(-1, data->Get(), data->Size(), &l);
+			data->Set(dec_data, l);
+		}
+		else
+			Decrypt (*data, data->Size(), &l);
 	}
 
-	void EncryptionAlgorithm::DecryptSectors (byte *data, uint64 sectorIndex, uint64 sectorCount, size_t sectorSize) const
+	byte *EncryptionAlgorithm::DecryptSectors (byte *data, uint64 sectorIndex, uint64 sectorCount, size_t sectorSize, uint64 *length_dec) const
 	{
 		if_debug (ValidateState());
-		Mode->DecryptSectors (data, sectorIndex, sectorCount, sectorSize);
+		if (FIsSGX)
+			return sgx_unseal_data(-1, data, sectorCount * sectorSize, length_dec);
+		else
+		{
+			Mode->DecryptSectors (data, sectorIndex, sectorCount, sectorSize);
+			*length_dec = sectorCount * sectorSize;
+			return data;
+		}
 	}
 
-	void EncryptionAlgorithm::Encrypt (byte *data, uint64 length) const
+	byte *EncryptionAlgorithm::Encrypt (byte *data, uint64 length, uint64 *length_enc) const
 	{
 		if_debug (ValidateState());
-		Mode->Encrypt (data, length);
+		if (FIsSGX)
+			return sgx_seal_data(-1, data, length, length_enc);
+		else
+		{
+			Mode->Encrypt (data, length);
+			*length_enc = length;
+			return data;
+		}
 	}
 
-	void EncryptionAlgorithm::Encrypt (const BufferPtr &data) const
+	void EncryptionAlgorithm::Encrypt (BufferPtr *data) const
 	{
-		Encrypt (data, data.Size());
+		uint64 l;
+		if (FIsSGX)
+		{
+			byte *enc_data = sgx_seal_data(-1, data->Get(), data->Size(), &l);
+			data->Set(enc_data, l);
+		}
+		else
+			Encrypt (*data, data->Size(), &l);
 	}
 
-	void EncryptionAlgorithm::EncryptSectors (byte *data, uint64 sectorIndex, uint64 sectorCount, size_t sectorSize) const
+	byte *EncryptionAlgorithm::EncryptSectors (byte *data, uint64 sectorIndex, uint64 sectorCount, size_t sectorSize, uint64 *length_enc) const
 	{
 		if_debug (ValidateState ());
-		Mode->EncryptSectors (data, sectorIndex, sectorCount, sectorSize);
+		if (FIsSGX)
+			return sgx_seal_data(-1, data, sectorCount * sectorSize, length_enc);
+		else
+		{
+			Mode->EncryptSectors (data, sectorIndex, sectorCount, sectorSize);
+			*length_enc = sectorCount * sectorSize;
+			return data;
+		}
 	}
 
 	EncryptionAlgorithmList EncryptionAlgorithm::GetAvailableAlgorithms ()
@@ -185,7 +228,6 @@ namespace VeraCrypt
 
 		return supported;
 	}
-
 
 	bool EncryptionAlgorithm::IsModeSupported (const shared_ptr <EncryptionMode> mode) const
 	{
@@ -369,6 +411,7 @@ namespace VeraCrypt
 
 	SGX::SGX()
 	{
+		FIsSGX = true;
 		Ciphers.push_back (shared_ptr <Cipher> (new CipherSGX ()));
 		SupportedModes.push_back (shared_ptr <EncryptionMode> (new EncryptionModeXTS ()));
 	}

@@ -122,12 +122,12 @@ namespace VeraCrypt
 	class ReEncryptHeaderThreadRoutine : public WaitThreadRoutine
 	{
 	public:
-		const BufferPtr &m_newHeaderBuffer;
+		BufferPtr *m_newHeaderBuffer;
 		shared_ptr <VolumeHeader> m_header;
 		shared_ptr <VolumePassword> m_password;
 		int m_pim;
 		shared_ptr <KeyfileList> m_keyfiles;
-		ReEncryptHeaderThreadRoutine(const BufferPtr &newHeaderBuffer, shared_ptr <VolumeHeader> header, shared_ptr <VolumePassword> password, int pim, shared_ptr <KeyfileList> keyfiles)
+		ReEncryptHeaderThreadRoutine(BufferPtr *newHeaderBuffer, shared_ptr <VolumeHeader> header, shared_ptr <VolumePassword> password, int pim, shared_ptr <KeyfileList> keyfiles)
 			: m_newHeaderBuffer(newHeaderBuffer), m_header(header), m_password(password), m_pim(pim), m_keyfiles(keyfiles) {}
 		virtual ~ReEncryptHeaderThreadRoutine() { }
 		virtual void ExecutionCode(void) { Core->ReEncryptVolumeHeaderWithNewSalt (m_newHeaderBuffer, m_header, m_password, m_pim, m_keyfiles); }

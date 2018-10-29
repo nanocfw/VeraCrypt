@@ -466,13 +466,14 @@ namespace VeraCrypt
 
 			dataUnitNo = Endian::Big (*((uint64 *) XtsTestVectors[i].dataUnitNo));
 
-			aes.EncryptSectors (p, dataUnitNo, sizeof (p) / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE);
+			uint64 l;
+			aes.EncryptSectors (p, dataUnitNo, sizeof (p) / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE, &l);
 
-			aes.DecryptSectors (p, dataUnitNo, sizeof (p) / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE);
+			aes.DecryptSectors (p, dataUnitNo, sizeof (p) / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE, &l);
 			if (memcmp (XtsTestVectors[i].ciphertext, p, sizeof (p)) == 0)
 				throw TestFailed (SRC_POS);
 
-			aes.EncryptSectors (p, dataUnitNo, sizeof (p) / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE);
+			aes.EncryptSectors (p, dataUnitNo, sizeof (p) / ENCRYPTION_DATA_UNIT_SIZE, ENCRYPTION_DATA_UNIT_SIZE, &l);
 
 			if (memcmp (XtsTestVectors[i].ciphertext, p, sizeof (p)) != 0)
 				throw TestFailed (SRC_POS);
@@ -515,7 +516,7 @@ namespace VeraCrypt
 			{
 				shared_ptr <EncryptionMode> mode (new EncryptionModeXTS);
 
-				if (!ea.IsModeSupported (mode) || typeid(ea) == typeid(SGX))
+				if (!ea.IsModeSupported (mode) || ea.IsSGX())
 					continue;
 
 				ea.SetKey (ConstBufferPtr (testKey, ea.GetKeySize()));
@@ -536,7 +537,8 @@ namespace VeraCrypt
 						ENCRYPTION_DATA_UNIT_SIZE);
 				}
 
-				ea.EncryptSectors (buf, unitNo, nbrUnits, ENCRYPTION_DATA_UNIT_SIZE);
+				uint64 l;
+				ea.EncryptSectors (buf, unitNo, nbrUnits, ENCRYPTION_DATA_UNIT_SIZE, &l);
 
 				crc = GetCrc32 (buf, sizeof (buf));
 
@@ -969,7 +971,7 @@ namespace VeraCrypt
 				if (crc == 0x9f5edd58)
 					throw TestFailed (SRC_POS);
 
-				ea.DecryptSectors (buf, unitNo, nbrUnits, ENCRYPTION_DATA_UNIT_SIZE);
+				ea.DecryptSectors (buf, unitNo, nbrUnits, ENCRYPTION_DATA_UNIT_SIZE, &l);
 
 				if (GetCrc32 (buf, sizeof (buf)) != 0x9f5edd58)
 					throw TestFailed (SRC_POS);
@@ -988,7 +990,7 @@ namespace VeraCrypt
 		{
 			shared_ptr <EncryptionMode> mode (new EncryptionModeXTS);
 
-			if (!ea.IsModeSupported (mode) || typeid(ea) == typeid(SGX))
+			if (!ea.IsModeSupported (mode) || ea.IsSGX())
 				continue;
 
 			ea.SetKey (ConstBufferPtr (testKey, ea.GetKeySize()));
@@ -1008,8 +1010,8 @@ namespace VeraCrypt
 					XtsTestVectors[array_capacity (XtsTestVectors)-1].plaintext,
 					ENCRYPTION_DATA_UNIT_SIZE);
 			}
-
-			ea.Encrypt (buf, sizeof (buf));
+			uint64 l;
+			ea.Encrypt (buf, sizeof (buf), &l);
 
 			crc = GetCrc32 (buf, sizeof (buf));
 
@@ -1113,7 +1115,7 @@ namespace VeraCrypt
 			if (crc == 0x9f5edd58)
 				throw TestFailed (SRC_POS);
 
-			ea.Decrypt (buf, sizeof (buf));
+			ea.Decrypt (buf, sizeof (buf), &l);
 
 			if (GetCrc32 (buf, sizeof (buf)) != 0x9f5edd58)
 				throw TestFailed (SRC_POS);

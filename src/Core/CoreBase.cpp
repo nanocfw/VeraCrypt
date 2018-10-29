@@ -144,7 +144,7 @@ namespace VeraCrypt
 		uint32 sectorSize = outerVolume->GetSectorSize();
 
 		SecureBuffer bootSectorBuffer (sectorSize);
-		outerVolume->ReadSectors (bootSectorBuffer, 0);
+		outerVolume->ReadSectors ((BufferPtr*) &bootSectorBuffer, 0);
 
 		int fatType;
 		byte *bootSector = bootSectorBuffer.Ptr();
@@ -182,7 +182,7 @@ namespace VeraCrypt
 			readOffset >= fatStartOffset;
 			readOffset -= sectorSize)
 		{
-			outerVolume->ReadSectors (sector, readOffset);
+			outerVolume->ReadSectors ((BufferPtr*) &sector, readOffset);
 
 			for (int offset = sectorSize - 4; offset >= 0; offset -= 4)
 			{
@@ -272,7 +272,7 @@ namespace VeraCrypt
 		encryptionAlgorithm->GetMode()->SetKey (modeKey);
 	}
 
-	void CoreBase::ReEncryptVolumeHeaderWithNewSalt (const BufferPtr &newHeaderBuffer, shared_ptr <VolumeHeader> header, shared_ptr <VolumePassword> password, int pim, shared_ptr <KeyfileList> keyfiles) const
+	void CoreBase::ReEncryptVolumeHeaderWithNewSalt (BufferPtr *newHeaderBuffer, shared_ptr <VolumeHeader> header, shared_ptr <VolumePassword> password, int pim, shared_ptr <KeyfileList> keyfiles) const
 	{
 		shared_ptr <Pkcs5Kdf> pkcs5Kdf = header->GetPkcs5Kdf();
 
