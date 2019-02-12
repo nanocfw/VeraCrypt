@@ -108,7 +108,9 @@ namespace VeraCrypt
 
 				try
 				{
-					mountedVolume = CoreService::RequestMountVolume (newOptions);
+					//mountedVolume = CoreService::RequestMountVolume (newOptions);
+					mountedVolume = CoreUnix::MountVolume(newOptions);
+					//mountedVolume = CoreLinux::MountVolume(newOptions);
 				}
 				catch (ProtectionPasswordIncorrect &e)
 				{

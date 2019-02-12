@@ -214,6 +214,7 @@ namespace VeraCrypt
 		SupportedEncryptionAlgorithms.push_back (shared_ptr <EncryptionAlgorithm> (new SerpentAES ()));
 		SupportedEncryptionAlgorithms.push_back (shared_ptr <EncryptionAlgorithm> (new SerpentTwofishAES ()));
 		SupportedEncryptionAlgorithms.push_back (shared_ptr <EncryptionAlgorithm> (new TwofishSerpent ()));
+		SupportedEncryptionAlgorithms.push_back (shared_ptr <EncryptionAlgorithm> (new SGX ()));
 		
 		SupportedEncryptionModes.push_back (shared_ptr <EncryptionMode> (new EncryptionModeXTS ()));
 	}

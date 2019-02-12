@@ -196,19 +196,19 @@ namespace VeraCrypt
 					RandomNumberGenerator::GetData (hiddenHeaderKey);
 					headerOptions.HeaderKey = hiddenHeaderKey;
 
-					uint64 oldSize = Layout->GetHeader()->GetSize();
+					/*uint64 oldSize = Layout->GetHeader()->GetSize();
 					if(Options->EA->IsSGX())
 					{
 						hiddenHeader->SetSize(backupHeader.Size());
 						Layout->GetHeader()->SetSize(backupHeader.Size());
-					}
+					}*/
 
 					hiddenHeader->Create ((BufferPtr*) &backupHeader, headerOptions);
 
 					VolumeFile->Write (backupHeader);
 
-					if(Options->EA->IsSGX())
-						Layout->GetHeader()->SetSize(oldSize);
+					/*if(Options->EA->IsSGX())
+						Layout->GetHeader()->SetSize(oldSize);*/
 				}
 
 				VolumeFile->Flush();
@@ -233,7 +233,7 @@ namespace VeraCrypt
 
 	void VolumeCreator::CreateVolume (shared_ptr <VolumeCreationOptions> options)
 	{
-		EncryptionTest::TestAll();
+		//EncryptionTest::TestAll();
 
 		{
 #ifdef TC_UNIX

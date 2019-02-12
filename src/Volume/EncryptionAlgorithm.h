@@ -48,6 +48,7 @@ namespace VeraCrypt
 		virtual void SetKey (const ConstBufferPtr &key);
 		virtual void SetMode (shared_ptr <EncryptionMode> mode);
 		bool IsSGX() {return FIsSGX; };
+		int DefaultBytesAddSGX() {if(FIsSGX) return 560; return 0;}
 
 	protected:
 		EncryptionAlgorithm ();

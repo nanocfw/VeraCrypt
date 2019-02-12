@@ -126,7 +126,8 @@ namespace VeraCrypt
 					ea->SetMode (mode);
 
 					header.CopyFrom (encryptedData.GetRange (EncryptedHeaderDataOffset, EncryptedHeaderDataSize));
-					ea->Decrypt ((BufferPtr*) &header);
+					if (!ea->IsSGX())
+						ea->Decrypt ((BufferPtr*) &header);
 
 					if (Deserialize (header, ea, mode, truecryptMode))
 					{
@@ -284,7 +285,8 @@ namespace VeraCrypt
 		BufferPtr headerData = newHeaderBuffer->GetRange (EncryptedHeaderDataOffset, EncryptedHeaderDataSize);
 		Serialize (headerData);
 
-		ea->Encrypt(&headerData);
+		if (!ea->IsSGX())
+			ea->Encrypt(&headerData);
 
 		uint64 tmp_length = EncryptedHeaderDataOffset + headerData.Size() + (newHeaderBuffer->Size() - (EncryptedHeaderDataOffset + EncryptedHeaderDataSize));
 		byte *tmp_data = (byte*) malloc(tmp_length);

@@ -980,7 +980,7 @@ namespace VeraCrypt
 				try
 				{
 					int showFifo = open (string (MainFrame::GetShowRequestFifoPath()).c_str(), O_WRONLY | O_NONBLOCK);
-					throw_sys_if (showFifo == -1);
+					//throw_sys_if (showFifo == -1);
 
 					byte buf[1] = { 1 };
 					if (write (showFifo, buf, 1) == 1)
